@@ -2,10 +2,16 @@
 
 Weirdgrep is a tool that allows you to search through huge files (initially designed to look through pages of code).
 
+# Installation
+
+```bash
+$ cargo install weirdgrep
+```
+
 # Usage
 
 ```bash
-❯ weirdgrep -h
+$ weirdgrep -h
 weirdgrep 1.0.0
 Vaelio <archelio@protonmail.com>
 Regex parser to search through files.
