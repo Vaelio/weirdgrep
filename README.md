@@ -12,7 +12,7 @@ $ cargo install weirdgrep
 
 ```bash
 $ weirdgrep -h
-weirdgrep 1.0.0
+weirdgrep 1.0.1
 Vaelio <archelio@protonmail.com>
 Regex parser to search through files.
 
