@@ -1,10 +1,9 @@
 use clap::Parser;
-use std::fs::File;
-use std::error::Error;
-use std::io::BufReader;
-use std::io::prelude::*;
 use regex::Regex;
-
+use std::error::Error;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
 
 #[derive(Parser)]
 #[clap(author = "Vaelio <archelio@protonmail.com>")]
@@ -20,7 +19,7 @@ struct Args {
     /// File to parse
     path: String,
 
-    /// Switch to scope mode, and use this regex as a search and (regex, endtag) as boundaries of the search afterwards 
+    /// Switch to scope mode, and use this regex as a search and (regex, endtag) as boundaries of the search afterwards
     #[clap(short, value_parser)]
     within: Option<String>,
 
@@ -33,18 +32,22 @@ struct Args {
     add_markers: bool,
 }
 
-
 fn open(f: &String) -> Result<File, Box<dyn Error>> {
     Ok(File::open(f)?)
 }
-
 
 fn format_line_with_markers(line: &str) -> String {
     format!("{} <------- XXXXXXXXXXXXX", line)
 }
 
-
-fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, within: &str, numbers: bool, add_markers: bool) -> Result<Vec<String>, Box<dyn Error>> {
+fn read_file_with_regex_tag_and_within(
+    f: File,
+    rin_s: &str,
+    rout_s: &str,
+    within: &str,
+    numbers: bool,
+    add_markers: bool,
+) -> Result<Vec<String>, Box<dyn Error>> {
     let bufreader = BufReader::new(f);
     let mut content: Vec<String> = Vec::new();
     let mut resv: Vec<usize> = Vec::new();
@@ -64,42 +67,40 @@ fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, withi
             }
         }
 
-        
         content.push(line);
     }
 
     for res in resv {
         /* go forward until rout matches */
-        let mut after : Vec<String> = {
+        let mut after: Vec<String> = {
             let mut after: Vec<String> = Vec::new();
             for (c, line) in content.iter().skip(res).enumerate() {
                 if numbers {
-                    after.push(format!("{}: {}", res+c, line));
+                    after.push(format!("{}: {}", res + c, line));
                 } else {
                     after.push(line.to_string());
                 }
 
                 if rout.is_match(line) {
-                    break
+                    break;
                 }
-
             }
 
             after
         };
-        
+
         /* go backward until rin matches */
-        let mut before : Vec<String> = {
+        let mut before: Vec<String> = {
             let mut before: Vec<String> = Vec::new();
             for (c, line) in content.iter().rev().skip(content.len() - res).enumerate() {
                 if numbers {
-                    before.insert(0, format!("{}: {}", res-c, line));
+                    before.insert(0, format!("{}: {}", res - c, line));
                 } else {
                     before.insert(0, line.to_string());
                 }
 
                 if rin.is_match(line) {
-                    break
+                    break;
                 }
             }
 
@@ -108,17 +109,18 @@ fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, withi
 
         out.append(&mut before);
         out.append(&mut after);
-
     }
 
     Ok(out)
-
-    
 }
 
-
-
-fn read_file_with_regex_and_tag(f: File, rin_s: &str, rout_s: &str, numbers: bool, add_markers: bool) -> Result<Vec<String>, Box<dyn Error>> {
+fn read_file_with_regex_and_tag(
+    f: File,
+    rin_s: &str,
+    rout_s: &str,
+    numbers: bool,
+    add_markers: bool,
+) -> Result<Vec<String>, Box<dyn Error>> {
     let bufreader = BufReader::new(f);
     let mut content: Vec<String> = Vec::new();
     let rin = Regex::new(rin_s)?;
@@ -154,25 +156,37 @@ fn main() {
 
     if let Ok(file) = open(&args.path) {
         if let Some(within) = args.within {
-            match read_file_with_regex_tag_and_within(file, &args.regex, &args.endtag, &within, args.numbers, args.add_markers) {
+            match read_file_with_regex_tag_and_within(
+                file,
+                &args.regex,
+                &args.endtag,
+                &within,
+                args.numbers,
+                args.add_markers,
+            ) {
                 Ok(v) => {
                     for line in v.iter() {
                         println!("{}", line);
                     }
-                },
+                }
                 Err(e) => println!("Got error while parsing: {:?}", e),
             }
         } else {
-            match read_file_with_regex_and_tag(file, &args.regex, &args.endtag, args.numbers, args.add_markers) {
+            match read_file_with_regex_and_tag(
+                file,
+                &args.regex,
+                &args.endtag,
+                args.numbers,
+                args.add_markers,
+            ) {
                 Ok(v) => {
                     for line in v.iter() {
                         println!("{}", line);
                     }
-                },
+                }
                 Err(e) => println!("Got error while parsing: {:?}", e),
             }
         }
-        
     } else {
         println!("Either the file doesn't exists or you don't have access to it");
     }
