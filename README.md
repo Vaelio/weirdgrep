@@ -26,12 +26,12 @@ OPTIONS:
                        boundaries of the search afterwards
 ```
 
-By default the tool will search for <REGEX> inside <PATH> and will print each matches until <ENDTAG> is reached.
-(This <ENDTAG> can be a regex aswell)
+By default the tool will search for \<REGEX\> inside \<PATH\> and will print each matches until \<ENDTAG\> is reached.
+(This \<ENDTAG\> can be a regex aswell)
 
-It is usefull when you want to extract for exemple every functions of a code page where the signature matches <REGEX>
+It is usefull when you want to extract for exemple every functions of a code page where the signature matches \<REGEX\>
 
-You can further improve the granularity by adding the -w <WITHIN> switch which makes the tool search for this regex instead
-and then go forward and backward to respectively find <ENDTAG> and <REGEX> args. 
-(This <WITHIN> option can also be a regex)
+You can further improve the granularity by adding the -w \<WITHIN\> switch which makes the tool search for this regex instead
+and then go forward and backward to respectively find \<ENDTAG\> and \<REGEX\> args. 
+(This \<WITHIN\> option can also be a regex)
 
