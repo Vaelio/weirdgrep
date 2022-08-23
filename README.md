@@ -12,7 +12,7 @@ $ cargo install weirdgrep
 
 ```bash
 $ weirdgrep -h
-weirdgrep 1.0.1
+weirdgrep 1.0.2
 Vaelio <archelio@protonmail.com>
 Regex parser to search through files.
 
@@ -25,11 +25,12 @@ ARGS:
     <PATH>      File to parse
 
 OPTIONS:
-    -h, --help         Print help information
-    -n, --numbers      Print line numbers for each printed lines starting from 0
-    -V, --version      Print version information
-    -w <WITHIN>        Switch to scope mode, and use this regex as a search and (regex, endtag) as
-                       boundaries of the search afterwards
+    -a, --add-markers    Add markers to better show which line matched
+    -h, --help           Print help information
+    -n, --numbers        Print line numbers for each printed lines starting from 0
+    -V, --version        Print version information
+    -w <WITHIN>          Switch to scope mode, and use this regex as a search and (regex, endtag) as
+                         boundaries of the search afterwards
 ```
 
 By default the tool will search for \<REGEX\> inside \<PATH\> and will print each matches until \<ENDTAG\> is reached.
