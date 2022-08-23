@@ -26,7 +26,11 @@ struct Args {
 
     /// Print line numbers for each printed lines starting from 0
     #[clap(short, long, action)]
-    numbers: bool
+    numbers: bool,
+
+    /// Add markers to better show which line matched
+    #[clap(short, long, action)]
+    add_markers: bool,
 }
 
 
@@ -35,7 +39,12 @@ fn open(f: &String) -> Result<File, Box<dyn Error>> {
 }
 
 
-fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, within: &str, numbers: bool) -> Result<Vec<String>, Box<dyn Error>> {
+fn format_line_with_markers(line: &str) -> String {
+    format!("{} <------- XXXXXXXXXXXXX", line)
+}
+
+
+fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, within: &str, numbers: bool, add_markers: bool) -> Result<Vec<String>, Box<dyn Error>> {
     let bufreader = BufReader::new(f);
     let mut content: Vec<String> = Vec::new();
     let mut resv: Vec<usize> = Vec::new();
@@ -45,12 +54,17 @@ fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, withi
     let rwithin = Regex::new(within)?;
 
     for (line_count, line) in bufreader.lines().enumerate() {
-        let line = line?;
+        let mut line = line?;
 
         if rwithin.is_match(&line) {
             resv.push(line_count);
+
+            if add_markers {
+                line = format_line_with_markers(&line);
+            }
         }
 
+        
         content.push(line);
     }
 
@@ -103,7 +117,8 @@ fn read_file_with_regex_tag_and_within(f: File, rin_s: &str, rout_s: &str, withi
 }
 
 
-fn read_file_with_regex_and_tag(f: File, rin_s: &str, rout_s: &str, numbers: bool) -> Result<Vec<String>, Box<dyn Error>> {
+
+fn read_file_with_regex_and_tag(f: File, rin_s: &str, rout_s: &str, numbers: bool, add_markers: bool) -> Result<Vec<String>, Box<dyn Error>> {
     let bufreader = BufReader::new(f);
     let mut content: Vec<String> = Vec::new();
     let rin = Regex::new(rin_s)?;
@@ -111,9 +126,12 @@ fn read_file_with_regex_and_tag(f: File, rin_s: &str, rout_s: &str, numbers: boo
     let mut appending = false;
 
     for (idx, line) in bufreader.lines().enumerate() {
-        let line = line?;
+        let mut line = line?;
         if !appending && rin.is_match(&line) {
             appending = true;
+            if add_markers {
+                line = format_line_with_markers(&line);
+            }
         }
         if appending {
             if rout.is_match(&line) {
@@ -136,7 +154,7 @@ fn main() {
 
     if let Ok(file) = open(&args.path) {
         if let Some(within) = args.within {
-            match read_file_with_regex_tag_and_within(file, &args.regex, &args.endtag, &within, args.numbers) {
+            match read_file_with_regex_tag_and_within(file, &args.regex, &args.endtag, &within, args.numbers, args.add_markers) {
                 Ok(v) => {
                     for line in v.iter() {
                         println!("{}", line);
@@ -145,7 +163,7 @@ fn main() {
                 Err(e) => println!("Got error while parsing: {:?}", e),
             }
         } else {
-            match read_file_with_regex_and_tag(file, &args.regex, &args.endtag, args.numbers) {
+            match read_file_with_regex_and_tag(file, &args.regex, &args.endtag, args.numbers, args.add_markers) {
                 Ok(v) => {
                     for line in v.iter() {
                         println!("{}", line);
