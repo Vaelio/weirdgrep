@@ -35,3 +35,22 @@ You can further improve the granularity by adding the -w \<WITHIN\> switch which
 and then go forward and backward to respectively find \<ENDTAG\> and \<REGEX\> args. 
 (This \<WITHIN\> option can also be a regex)
 
+# Example
+
+```bash
+$ weirdgrep 'Function<.+' 'EndFunction' -w '.+/invite/.+' instructions.hasm -n
+1660535: Function<createUrl>28016(1 params, 16 registers, 0 symbols):
+1660536: 	LoadThisNS          	Reg8:1
+[REDACTED]
+1660577: 	Add                 	Reg8:4, Reg8:2, Reg8:4
+1660578: 	LoadConstString     	Reg8:2, UInt16:6648
+1660578: 	; Oper[1]: String(6648) '/invite/'
+1660579: 
+[REDACTED]
+1660611: EndFunction
+
+$ wc -l instructions.hasm
+1750287 instructions.hasm
+
+```
+
