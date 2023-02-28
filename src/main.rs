@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use glob::glob;
 
 #[derive(Parser)]
 #[clap(author = "Vaelio <archelio@protonmail.com>")]
@@ -30,6 +31,10 @@ struct Args {
     /// Add markers to better show which line matched
     #[clap(short, long, action)]
     add_markers: bool,
+
+    /// Recursive search through directories
+    #[clap(short, long, action)]
+    recursive: bool,
 }
 
 fn open(f: &String) -> Result<File, Box<dyn Error>> {
@@ -151,43 +156,90 @@ fn read_file_with_regex_and_tag(
     Ok(content)
 }
 
+fn recursive_grep(args: &Args) -> Result<Vec<String>, Box<dyn Error>> {
+    let mut recurs_content = vec![];
+    for entry in glob(&format!("{}/**/*", &args.path))? {
+        let entry = format!("{}", entry?.display());
+        if let Ok(file) = open(&entry) {
+            let mut file_content = if let Some(within) = &args.within {
+                read_file_with_regex_tag_and_within(
+                    file,
+                    &args.regex,
+                    &args.endtag,
+                    &within,
+                    args.numbers,
+                    args.add_markers,
+                )?
+            } else {
+                read_file_with_regex_and_tag(
+                    file,
+                    &args.regex,
+                    &args.endtag,
+                    args.numbers,
+                    args.add_markers,
+                )?
+            };
+            if file_content.len() > 0 {
+                recurs_content.push(format!("-------- {} --------", &entry));
+            }
+            recurs_content.append(&mut file_content);
+        } else {
+            println!("Possible race conditions while recursive search: file \"{}\" does not exist or you don't have access to it", &entry);
+        }
+
+    }
+
+    Ok(recurs_content)
+}
+
+
 fn main() {
     let args = Args::parse();
-
-    if let Ok(file) = open(&args.path) {
-        if let Some(within) = args.within {
-            match read_file_with_regex_tag_and_within(
-                file,
-                &args.regex,
-                &args.endtag,
-                &within,
-                args.numbers,
-                args.add_markers,
-            ) {
-                Ok(v) => {
-                    for line in v.iter() {
-                        println!("{}", line);
-                    }
+    if args.recursive {
+        match recursive_grep(&args) {
+            Ok(v) => {
+                for line in v.iter() {
+                    println!("{}", line);
                 }
-                Err(e) => println!("Got error while parsing: {:?}", e),
-            }
-        } else {
-            match read_file_with_regex_and_tag(
-                file,
-                &args.regex,
-                &args.endtag,
-                args.numbers,
-                args.add_markers,
-            ) {
-                Ok(v) => {
-                    for line in v.iter() {
-                        println!("{}", line);
-                    }
-                }
-                Err(e) => println!("Got error while parsing: {:?}", e),
-            }
+            },
+            Err(e) => println!("Got error while parsing recursively: {:?}", e),
         }
     } else {
-        println!("Either the file doesn't exists or you don't have access to it");
+        if let Ok(file) = open(&args.path) {
+            if let Some(within) = args.within {
+                match read_file_with_regex_tag_and_within(
+                    file,
+                    &args.regex,
+                    &args.endtag,
+                    &within,
+                    args.numbers,
+                    args.add_markers,
+                ) {
+                    Ok(v) => {
+                        for line in v.iter() {
+                            println!("{}", line);
+                        }
+                    }
+                    Err(e) => println!("Got error while parsing: {:?}", e),
+                }
+            } else {
+                match read_file_with_regex_and_tag(
+                    file,
+                    &args.regex,
+                    &args.endtag,
+                    args.numbers,
+                    args.add_markers,
+                ) {
+                    Ok(v) => {
+                        for line in v.iter() {
+                            println!("{}", line);
+                        }
+                    }
+                    Err(e) => println!("Got error while parsing: {:?}", e),
+                }
+            }
+        } else {
+            println!("Either the file doesn't exists or you don't have access to it");
+        }
     }
 }
