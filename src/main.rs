@@ -2,6 +2,7 @@ use clap::Parser;
 use regex::Regex;
 use std::error::Error;
 use std::fs::File;
+use std::fs::metadata;
 use std::io::prelude::*;
 use std::io::BufReader;
 use glob::glob;
@@ -160,33 +161,34 @@ fn recursive_grep(args: &Args) -> Result<Vec<String>, Box<dyn Error>> {
     let mut recurs_content = vec![];
     for entry in glob(&format!("{}/**/*", &args.path))? {
         let entry = format!("{}", entry?.display());
-        if let Ok(file) = open(&entry) {
-            let mut file_content = if let Some(within) = &args.within {
-                read_file_with_regex_tag_and_within(
-                    file,
-                    &args.regex,
-                    &args.endtag,
-                    &within,
-                    args.numbers,
-                    args.add_markers,
-                )?
+        if metadata(&entry)?.is_file() {
+            if let Ok(file) = open(&entry) {
+                let mut file_content = if let Some(within) = &args.within {
+                    read_file_with_regex_tag_and_within(
+                        file,
+                        &args.regex,
+                        &args.endtag,
+                        &within,
+                        args.numbers,
+                        args.add_markers,
+                    )?
+                } else {
+                    read_file_with_regex_and_tag(
+                        file,
+                        &args.regex,
+                        &args.endtag,
+                        args.numbers,
+                        args.add_markers,
+                    )?
+                };
+                if file_content.len() > 0 {
+                    recurs_content.push(format!("-------- {} --------", &entry));
+                }
+                recurs_content.append(&mut file_content);
             } else {
-                read_file_with_regex_and_tag(
-                    file,
-                    &args.regex,
-                    &args.endtag,
-                    args.numbers,
-                    args.add_markers,
-                )?
-            };
-            if file_content.len() > 0 {
-                recurs_content.push(format!("-------- {} --------", &entry));
+                println!("Possible race conditions while recursive search: file \"{}\" does not exist or you don't have access to it", &entry);
             }
-            recurs_content.append(&mut file_content);
-        } else {
-            println!("Possible race conditions while recursive search: file \"{}\" does not exist or you don't have access to it", &entry);
         }
-
     }
 
     Ok(recurs_content)
