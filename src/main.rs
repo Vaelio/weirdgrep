@@ -156,30 +156,36 @@ fn read_file_with_regex_and_tag(
 
     Ok(content)
 }
-
 fn recursive_grep(args: &Args) -> Result<Vec<String>, Box<dyn Error>> {
     let mut recurs_content = vec![];
     for entry in glob(&format!("{}/**/*", &args.path))? {
         let entry = format!("{}", entry?.display());
         if metadata(&entry)?.is_file() {
+            println!("Entry: {}", &entry);
             if let Ok(file) = open(&entry) {
                 let mut file_content = if let Some(within) = &args.within {
-                    read_file_with_regex_tag_and_within(
+                    match read_file_with_regex_tag_and_within(
                         file,
                         &args.regex,
                         &args.endtag,
                         &within,
                         args.numbers,
                         args.add_markers,
-                    )?
+                    ) {
+                        Ok(v) => v,
+                        Err(e) => vec![format!("{}", e)],
+                    }
                 } else {
-                    read_file_with_regex_and_tag(
+                    match read_file_with_regex_and_tag(
                         file,
                         &args.regex,
                         &args.endtag,
                         args.numbers,
                         args.add_markers,
-                    )?
+                    ) {
+                        Ok(v) => v,
+                        Err(e) => vec![format!("{}", e)],
+                    }
                 };
                 if file_content.len() > 0 {
                     recurs_content.push(format!("-------- {} --------", &entry));
